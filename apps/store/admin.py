@@ -1,7 +1,4 @@
-from django.contrib import admin, messages
-from django import forms
-
-from collections import OrderedDict
+from django.contrib import admin
 from rangefilter.filter import DateRangeFilter
 
 from common.mixins import NoAddDeleteMixin, NoChangeDeleteMixin
@@ -9,7 +6,6 @@ from store.models import *
 
 
 # Actions
-
 def make_active(modeladmin, request, queryset):
 	queryset.update(is_active=True)
 make_active.short_description = "Mark selected items as active"
@@ -30,8 +26,7 @@ def uncancel(modeladmin, request, queryset):
 uncancel.short_description = "Mark selected orders as not cancelled"
 
 
-
-# Admin
+# Admins
 class StoreItemInline(NoChangeDeleteMixin, admin.TabularInline):
 	model = StoreItem
 	extra = 0

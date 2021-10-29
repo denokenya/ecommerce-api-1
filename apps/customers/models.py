@@ -4,9 +4,7 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from django_countries.fields import CountryField
-
-from address.models import Address
+from address.models import AbstractAddress
 
 
 # Models
@@ -25,25 +23,19 @@ class Customer(models.Model):
 	class Meta:
 		verbose_name = 'Customer Info'
 
-	if apps.is_installed('store'):
-		def __init__(self, *args, **kwargs):
-			super().__init__(*args, **kwargs)
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		if apps.is_installed('store'):
 			self.old_price_level = self.price_level
 
 	def __str__(self):
 		return str(self.user)
 		
 
-class CustomerAddress(Address):
-	user = models.ForeignKey('api_auth.User', on_delete=models.CASCADE)
-
+class CustomerAddress(AbstractAddress):
 	first_name = models.CharField("First Name", max_length=30)
 	last_name = models.CharField("Last Name", max_length=30)
 	email = models.EmailField("Email Address", max_length=30)
-
-	class Meta:
-		abstract = True
-		unique_together = ('first_name', 'last_name', 'email', 'line1', 'line2', 'city', 'state', 'zipcode', 'country')
 
 
 class Card(CustomerAddress):

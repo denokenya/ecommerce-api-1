@@ -1,6 +1,5 @@
 import stripe
 
-from django.conf import settings
 from .models import Customer
 
 
@@ -34,7 +33,6 @@ def stripe_check_card(user, stripe_src):
 			card['card']['exp_year'] == exp_year
 		):
 			return card['id']
-
 	return
 
 

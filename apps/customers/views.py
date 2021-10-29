@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
-
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 

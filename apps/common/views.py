@@ -10,27 +10,27 @@ from .serializers import BulkSerializer
 
 
 class GenericAPISerializerView(GenericAPIView):
-	def handle_response(self, request, status, many=False):
-		sz = self.get_serializer(data=request.data, many=many)
-		sz.is_valid(raise_exception=True)
-		result = sz.save()
-		return Response(result, status=status)
+	def handle_response(self, request, many=False):
+		serializer = self.get_serializer(data=request.data, many=many)
+		serializer.is_valid(raise_exception=True)
+		result = serializer.save()
+		return Response(result)
 
 	def post(self, request, format=None):
-		return self.handle_response(request, status.HTTP_201_CREATED)
+		return self.handle_response(request)
 
 	def put(self, request, format=None):
-		return self.handle_response(request, status.HTTP_200_OK)
+		return self.handle_response(request)
 
 	def patch(self, request, format=None):
-		return self.handle_response(request, status.HTTP_200_OK)
+		return self.handle_response(request)
 
 
 class BulkAPIView(ListCreateAPIView):
-	queryset = None
-	serializer_class = None
 	app_label = None
 	model_name = None
+	queryset = None
+	serializer_class = None
 
 	def setup(self, request, *args, **kwargs):
 		super().setup(request, *args, **kwargs)

@@ -17,13 +17,3 @@ class BulkSerializer(serializers.Serializer):
 
 	def get_delete_ids(self):
 		return [d['id'] for d in self.validated_data['data']]
-
-
-class DictSerializer(serializers.Serializer):
-	data = serializers.DictField()
-
-
-def check_dict(data):
-	serializer = DictSerializer(data=data)
-	serializer.is_valid(raise_exception=True)
-	return serializer

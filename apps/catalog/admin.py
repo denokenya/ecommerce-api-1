@@ -4,10 +4,18 @@ from django.contrib import admin
 from catalog.models import *
 from common.mixins import RefreshSaveChange
 
-if apps.is_installed('store'):
-	from store.admin import PriceInline, StoreItemInline
+
+# Inlines
+class ImageInline(admin.TabularInline):
+	model = Image
+
+	fields = ('name', 'image', 'number',)
+	readonly_fields = ('number',)
+	classes = ['collapse']
+	extra = 0
 
 
+# Admins
 class ItemTypeAdmin(admin.ModelAdmin):
 	fields = ('name', 'is_active',)
 
@@ -22,13 +30,9 @@ class ItemCategoryAdmin(admin.ModelAdmin):
 		return {}
 
 
-class ImageInline(admin.TabularInline):
-	model = Image
-	fields = ('name', 'image', 'number',)
-	readonly_fields = ('number',)
-	extra = 0
-
-	classes = ['collapse']
+class ParcelAdmin(admin.ModelAdmin):
+	def get_model_perms(self, request):
+		return {}	
 
 
 class ItemAdmin(RefreshSaveChange, admin.ModelAdmin):
@@ -39,16 +43,12 @@ class ItemAdmin(RefreshSaveChange, admin.ModelAdmin):
 
 	inlines = [ImageInline,]
 	if apps.is_installed('customers'):
+		from store.admin import PriceInline, StoreItemInline
 		inlines.append(StoreItemInline)
 		inlines.append(PriceInline)
 
 
-class ParcelAdmin(admin.ModelAdmin):
-	def get_model_perms(self, request):
-		return {}	
-
-
 admin.site.register(ItemType, ItemTypeAdmin)
 admin.site.register(ItemCategory, ItemCategoryAdmin)
-admin.site.register(Item, ItemAdmin)
 admin.site.register(Parcel, ParcelAdmin)
+admin.site.register(Item, ItemAdmin)

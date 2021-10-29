@@ -1,5 +1,6 @@
 from django.apps import apps
 from rest_framework import serializers
+
 from .models import *
 
 
@@ -16,7 +17,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Item
-		fields = ['id', 'item_type', 'item_category', 'name', 'slug', 'description', 'number', 'is_active', 'parcel']
+		fields = ['item_type', 'item_category', 'name', 'slug', 'description', 'number', 'is_active', 'parcel']
 
 		depth = 1
 		extra_kwargs = {

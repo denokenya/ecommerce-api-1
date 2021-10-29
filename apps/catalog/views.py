@@ -7,7 +7,7 @@ from .serializers import *
 class ItemBulkView(BulkAPIView):
 	app_label = 'catalog'
 	model_name = 'Item'
-
+	
 	queryset = Item.objects.all()
 	serializer_class = ItemSerializer
 

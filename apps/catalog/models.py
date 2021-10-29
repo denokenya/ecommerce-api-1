@@ -1,8 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.template.defaultfilters import slugify
-from django.urls import reverse
-from django.utils.html import format_html
 
 
 class ItemType(models.Model):

@@ -1,13 +1,8 @@
 from django.shortcuts import get_object_or_404
-
-from rest_framework import status
-from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api_auth.models import User
 from common.views import BulkAPIView
-from customers.models import Card
 from .filters import filter_store_items
 from .models import *
 from .serializers import *
@@ -75,7 +70,6 @@ class CartView(APIView):
 		serializer.is_valid(raise_exception=True)			
 		order_item = serializer.update()
 		result = OrderItemSerializer(order_item).data
-
 		return Response(result)
 
 

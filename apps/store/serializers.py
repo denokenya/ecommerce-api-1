@@ -2,8 +2,6 @@ from rest_framework import serializers
 
 from api_auth.serializers import PhoneSerializer
 from api_auth.models import User
-from catalog.models import Item
-from catalog.serializers import ItemSerializer
 from customers.models import Card, Customer
 from customers.serializers import CardSerializer, ShippingAddressSerializer
 
@@ -25,7 +23,7 @@ class StoreItemSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = StoreItem
 		fields = ('id', 'item', 'quantity', 'location')
-		depth=0
+		depth = 0
 		extra_kwargs = {
 			'quantity': {'read_only': True}
 		}
@@ -75,6 +73,36 @@ class InventoryRecordSerializer(serializers.ModelSerializer):
 				raise serializers.ValidationError(error)
 
 		return validated_data
+
+
+# Customer
+class CustomerSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Customer
+		fields = ('stripe_customer_id', 'purchase_attempt_time', 'price_level', 'payment_methods')
+	
+	def to_representation(self, instance):
+		customer = super().to_representation(instance)
+		customer['price_level'] = instance.price_level.name
+		customer['payment_methods'] = list(instance.payment_methods.all().values_list('name', flat=True))
+		return customer
+
+
+class ExtendedUserSerializer(serializers.ModelSerializer):
+	phone = PhoneSerializer(read_only=True)
+	customer = CustomerSerializer(read_only=True)
+	card = CardSerializer(read_only=True, many=True)
+	shipping_address = ShippingAddressSerializer(read_only=True, many=True)
+
+	class Meta:
+		model = User
+		fields = ('id', 'first_name', 'last_name', 'email', 'phone', 'customer', 'card', 'shipping_address')
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.fields['orders'] = OrderSerializer(
+			instance=Order.objects.get_or_create_active(self.instance)[0], read_only=True, many=True
+		)
 
 
 # Order
@@ -130,36 +158,6 @@ class CartSerializer(serializers.Serializer):
 		self.instance.quantity = self.validated_data['quantity']
 		self.instance.save()
 		return self.instance
-
-
-# Customer
-class CustomerSerializer(serializers.ModelSerializer):
-	class Meta:
-		model = Customer
-		fields = ('stripe_customer_id', 'purchase_attempt_time', 'price_level', 'payment_methods')
-	
-	def to_representation(self, instance):
-		customer = super().to_representation(instance)
-		customer['price_level'] = instance.price_level.name
-		customer['payment_methods'] = list(instance.payment_methods.all().values_list('name', flat=True))
-		return customer
-
-
-class ExtendedUserSerializer(serializers.ModelSerializer):
-	phone = PhoneSerializer(read_only=True)
-	customer = CustomerSerializer(read_only=True)
-	card = CardSerializer(read_only=True, many=True)
-	shipping_address = ShippingAddressSerializer(read_only=True, many=True)
-
-	class Meta:
-		model = User
-		fields = ('id', 'first_name', 'last_name', 'email', 'phone', 'customer', 'card', 'shipping_address')
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.fields['orders'] = OrderSerializer(
-			instance=Order.objects.get_or_create_active(self.instance)[0], read_only=True, many=True
-		)
 
 
 class CheckoutSerializer(serializers.Serializer):

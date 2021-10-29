@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -40,4 +39,4 @@ class AddPhonenumberView(GenericAPISerializerView):
 
 class VerifyPhonenumberView(GenericAPISerializerView):
 	serializer_class = VerifyPhonenumberSerializer
-	http_method_names = ['patch']
+	http_method_names = ['post']

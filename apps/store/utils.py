@@ -1,8 +1,5 @@
 import stripe
 
-from django.contrib import messages
-from customers.models import Card
-
 
 def stripe_make_payment(order):
 	description = order.get_order_info()
@@ -25,7 +22,6 @@ def stripe_make_payment(order):
 		payment_intent_id,
 		payment_method=card.src_id,
 	)
-
 	return payment_intent_id
 
 

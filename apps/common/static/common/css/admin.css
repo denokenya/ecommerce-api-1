@@ -18,35 +18,13 @@ h5 {font-size: 18px !important; }
   }
 }
 
-
-/*Tables*/
-.table-caption {
-  background-color: #2C57AD;
-  color: white;
-  font-size: 26px !important;
-  text-align: left !important;
-  padding: 5px;
-}
-.table-bar {
-  background-color: #2C57AD;
-  height: 20px; 
-}
-
-#ajax-table {
-  margin-top: 20px;
-  margin-bottom: 50px;
-}
-#ajax-table td, #ajax-table th {font-size: 20px !important; }
-
-
 /*Margin/Padding/Display*/
 .pr-20 {padding-right: 20px; }
 .mt-30 {margin-top: 30px; }
 .mb-60 {margin-bottom: 60px; }
 .mw-600 {max-width: 600px; }
 .inline-group .tabular tr.has_original td {padding-top: 8px; }
-.original, .help {display: none; }
-.closelink {display: none !important; }
+.inline-related b, .inline_label, .original, .help, .closelink {display: none !important; }
 
 @media (min-width: 0px) and (max-width: 390px) {
   .navbar-brand img {max-width: 290px; }

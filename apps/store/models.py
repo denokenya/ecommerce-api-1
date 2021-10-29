@@ -1,6 +1,6 @@
 from django.db import models, transaction
-from django.db.models import Count, Manager, Sum
-from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
+from django.db.models import Manager, Sum
+from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -8,16 +8,18 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 
-from address.models import Address
+from address.models import AbstractAddress
 from catalog.models import Item, ItemType
 from customers.models import Customer
 
 
+# Constants
 ADD = 'Add'
 REMOVE = 'Remove'
 DEFAULT_TAX = 0.07
 
 
+# Models
 class PaymentMethod(models.Model):
 	CREDIT_CARD = 'Credit Card'
 	IN_PERSON = 'In Person'
@@ -33,14 +35,14 @@ class PaymentMethod(models.Model):
 		return self.name
 
 
-class PostOffice(Address):
+class PostOffice(AbstractAddress):
 	name = models.CharField(max_length=100, unique=True)
 
 	def __str__(self):
 		return self.name
 
 
-class Location(Address):
+class Location(AbstractAddress):
 	post_office = models.ForeignKey(PostOffice, on_delete=models.CASCADE, blank=True, null=True)
 
 	name = models.CharField(max_length=100, unique=True)

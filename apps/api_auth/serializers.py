@@ -3,12 +3,9 @@ import re
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.auth.hashers import make_password
-from django.db import transaction
 from rest_framework import serializers
 
 from django_countries.serializer_fields import CountryField
-from django_countries.widgets import CountrySelectWidget
 from djoser import serializers as djoser_sz
 from phonenumber_field.phonenumber import PhoneNumber
 from twilio.base.exceptions import TwilioRestException
@@ -17,7 +14,7 @@ from twilio.rest import Client
 from .models import *
 
 
-# UTILS
+# Utils
 class TokenSerializer(serializers.Serializer):
 	token = serializers.CharField()
 
@@ -38,28 +35,22 @@ class PasswordValidatorMixin(serializers.Serializer):
 		last_name = validated_data.get('last_name') or self.last_name
 		email = validated_data.get('email') or self.email
 
+		email_name = email.split("@")[0]
 		password = self.get_password(validated_data)
 
 		if len(password) < 8:
 			error_list.append("Password is not at least 8 characters")
-
 		if not re.search("[a-zA-Z]", password):
 			error_list.append("Password does not contain a letter")
-
 		if not re.search("[0-9]", password):
 			error_list.append("Password does not contain a number")
-
 		if not re.search(r"[!#$%&'()*+,-./:;<=>?@[\]^_`{|}~]", password):
 			error_list.append("Password does not contain a special character")
 
-
 		if len(first_name) > 4 and first_name.lower() in password.lower():
 			error_list.append("Password contains your first name")
-
 		if len(last_name) > 4 and last_name.lower() in password.lower():
 			error_list.append("Password contains your last name")
-
-		email_name = email.split("@")[0]
 		if len(email_name) > 4 and email_name.lower() in password.lower():
 			error_list.append("Password contains your email")
 
@@ -70,11 +61,7 @@ class PasswordValidatorMixin(serializers.Serializer):
 
 
 class PasswordSerializer(PasswordValidatorMixin, serializers.Serializer):
-	new_password = serializers.CharField(style={"input_type": "password"})
-
-	class Meta:
-		fields = ('new_password',)
-		extra_kwargs = { 'new_password': {'write_only': True} }
+	new_password = serializers.CharField(write_only=True, style={"input_type": "password"})
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -90,15 +77,18 @@ class PasswordRetypeSerializer(PasswordSerializer, djoser_sz.PasswordRetypeSeria
 	pass
 
 
-# CREATE USER
+# Create User
 class UserCreateSerializer(PasswordValidatorMixin, djoser_sz.UserCreateSerializer):
 	class Meta(djoser_sz.UserCreateSerializer.Meta):
-		fields = ('id', 'first_name', 'last_name', 'email', 'password')
-		extra_kwargs = {'password': {'write_only': True}}
+		fields = ('id', 'first_name', 'last_name', 'email', 'username', 'password')
+		extra_kwargs = {
+			'username': {'read_only': True},
+			'password': {'write_only': True},
+		}
 
 	def validate_email(self, value):
 		if User.objects.filter(email__iexact=value.lower()).exists():
-			raise serializers.ValidationError("A user with that email already exists.")
+			raise serializers.ValidationError("A user with this email already exists")
 		return value
 
 
@@ -106,16 +96,17 @@ class UserCreatePasswordRetypeSerializer(UserCreateSerializer, djoser_sz.UserCre
 	pass
 
 
-# GET USER
+# Get User
 class UserSerializer(djoser_sz.UserSerializer):
 	class Meta(djoser_sz.UserSerializer.Meta):
 		model = User
 		fields = ('first_name', 'last_name', 'email', 'username')
 
 
-# CHANGE/RESET PASSWORD
+# Change/Reset Password
 class SetPasswordSerializer(PasswordSerializer, djoser_sz.CurrentPasswordSerializer):
 	pass
+
 
 class SetPasswordRetypeSerializer(PasswordRetypeSerializer, djoser_sz.CurrentPasswordSerializer):
 	pass
@@ -129,7 +120,7 @@ class PasswordResetConfirmRetypeSerializer(djoser_sz.UidAndTokenSerializer, Pass
 	pass
 
 
-# TWILIO
+# Twilio
 ACCOUNT_SID = settings.ACCOUNT_SID
 AUTH_TOKEN = settings.AUTH_TOKEN
 TRIAL_NUMBER = settings.TRIAL_NUMBER
@@ -139,21 +130,16 @@ TRIAL_NUMBER = settings.TRIAL_NUMBER
 class PhoneSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Phone
-		fields = ('id', 'phonenumber', 'service_sid', 'verified')
+		fields = ('phonenumber', 'service_sid', 'verified')
 
 
 class AddPhonenumberSerializer(serializers.Serializer):
+	NUMBER_ERROR = "Use only numbers. Please try again"
+
+	user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 	country_code = CountryField(initial='US')
 	area_code = serializers.CharField(max_length=5)
 	number = serializers.CharField(max_length=15)
-
-	NUMBER_ERROR = "Use only numbers. Please try again."
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		request = self.context.get('request')
-		if request:
-			self.user = request.user
 
 	def validate_area_code(self, value):
 		if not re.match(r'^([\s\d]+)$', value):
@@ -166,17 +152,14 @@ class AddPhonenumberSerializer(serializers.Serializer):
 		return value
 
 	def validate(self, validated_data):
-		country_code = validated_data['country_code']
-		area_code = validated_data['area_code']
-		number = validated_data['number']
-
+		data = validated_data
 		phonenumber = PhoneNumber.from_string(
-			phone_number=f"{area_code}{number}", region=country_code
+			phone_number=f"{data['area_code']}{data['number']}", region=data['country_code']
 		).as_e164
 
 		try:
 			client = Client(ACCOUNT_SID, AUTH_TOKEN)
-			service = client.verify.services.create(friendly_name=self.user.email)
+			service = client.verify.services.create(friendly_name=data['user'].email)
 
 			verification = client.verify \
 			.services(service.sid) \
@@ -192,42 +175,39 @@ class AddPhonenumberSerializer(serializers.Serializer):
 
 	def save(self):
 		Phone.objects.update_or_create(
-			user=self.user,
+			user=self.validated_data['user'],
 			defaults={
 				'phonenumber': self.phonenumber,
 				'service_sid': self.service_sid,
 				'verified': False
 			}
 		)
-		return UserSerializer(instance=self.user).data
+		return {'details': f"Phonenumber: '{self.phonenumber}' added to account"}
 
 
 class VerifyPhonenumberSerializer(serializers.Serializer):
+	user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 	code = serializers.CharField(max_length=10)
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		request = self.context.get('request')
-		if request:
-			self.user = request.user
-
-	def validate_code(self, value):
-		phone = Phone.objects.get(user=self.user)
+	def validate(self, validated_data):
+		data = validated_data
+		self.phone = Phone.objects.get(user=data['user'])
 
 		try:
 			client = Client(ACCOUNT_SID, AUTH_TOKEN)
 
 			verification_check = client.verify \
-			.services(phone.service_sid) \
+			.services(self.phone.service_sid) \
 			.verification_checks \
-			.create(to=str(phone.phonenumber), code=value)
+			.create(to=str(self.phone.phonenumber), code=data['code'])
 		
 			if verification_check.status == 'approved':
-				return value
+				return validated_data
+			raise serializers.ValidationError("There was an error. Please try again")
 
 		except TwilioRestException as e:
 			raise serializers.ValidationError(e)
 
 	def save(self):
-		Phone.objects.filter(user=self.user).update(verified=True)
-		return UserSerializer(instance=self.user).data
+		Phone.objects.filter(user=self.validated_data['user']).update(verified=True)
+		return {'details': f"Phonenumber: '{self.phone.phonenumber}' verified"}

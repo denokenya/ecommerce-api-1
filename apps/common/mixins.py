@@ -1,6 +1,7 @@
 from django.shortcuts import redirect
 from .utils import hide_admin_btns
 
+
 # Admin
 class NoAddMixin:
 	def has_add_permission(self, request, obj=None):

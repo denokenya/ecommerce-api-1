@@ -8,47 +8,38 @@ from .utils import stripe_check_card, stripe_get_customer
 
 
 class CardSerializer(serializers.ModelSerializer):
-	stripe_src = serializers.CharField(required=False)
+	user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+	stripe_src = serializers.CharField(write_only=True)
 
 	class Meta:
 		model = Card
-		exclude = ('user',)
-		extra_kwargs = { 'src_id': {'read_only': True} }
+		fields = '__all__'
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		request = self.context.get('request')
-		if request:
-			self.user = request.user
-			if request.method == "POST":
-				self.fields['stripe_src'].required = True
-
-	def validate_stripe_src(self, value):
-		try:
-			stripe_get_customer(self.user)
-			src_id = stripe_check_card(self.user, value)
-		except Exception as e:
-			raise serializers.ValidationError(e)			
-
-		if src_id:
-			raise serializers.ValidationError("A card with this number and date already exists on your account.")
-
-		return value
+	def update_data(self, data):
+		self.src_id = self.instance.src_id
+		for k in self.instance.__dict__:
+			if data.get(k) is None:
+				data[k] = getattr(self.instance, k)
+		return data
 
 	def validate(self, validated_data):
-		data = validated_data
+		data = validated_data		
 
 		try:
-			if self.instance is None:
-				self.src_id = stripe.Customer.create_source(self.user.customer.stripe_customer_id, source=data['stripe_src']).id
-			else:
-				self.src_id = self.instance.src_id
-				for k in self.instance.__dict__:
-					if data.get(k) is None:
-						data[k] = getattr(self.instance, k)
+			stripe_get_customer(data['user'])
+			if stripe_check_card(data['user'], value):
+				raise serializers.ValidationError("A card with this number and date already exists on your account.")
 
+			if self.instance is None:
+				self.src_id = stripe.Customer.create_source(
+					data['user'].customer.stripe_customer_id,
+					source=data['stripe_src']
+				).id
+			else:
+				data = self.update_data(data)
+				
 				stripe.Customer.modify_source(
-					self.user.customer.stripe_customer_id,
+					data['user'].customer.stripe_customer_id,
 					self.src_id,
 					owner={
 						'name': f"{data['first_name']}, {data['last_name']}",
@@ -64,7 +55,7 @@ class CardSerializer(serializers.ModelSerializer):
 					}
 				)
 		except Exception as e:
-			raise serializers.ValidationError({'stripe_src': e})
+			raise serializers.ValidationError(e)
 
 		return validated_data
 
@@ -72,7 +63,7 @@ class CardSerializer(serializers.ModelSerializer):
 		data = self.validated_data
 		card = Card.objects.update_or_create(
 			src_id=self.src_id,
-			user=self.user,
+			user=data['user'],
 			defaults={
 				'line1':data['line1'],
 				'line2':data['line2'],
@@ -89,18 +80,8 @@ class CardSerializer(serializers.ModelSerializer):
 
 
 class ShippingAddressSerializer(serializers.ModelSerializer):
+	user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
 	class Meta:
 		model = ShippingAddress
-		exclude = ('user',)
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		request = self.context.get('request')
-		if request:
-			if request.method == "POST":
-				qs = User.objects.filter(pk=request.user.pk)
-				self.fields['user'] = serializers.PrimaryKeyRelatedField(
-					write_only=True,
-					queryset=qs,
-					default=qs[0]
-				)
+		fields = '__all__'
