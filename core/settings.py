@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     
     # custom apps
     'address',
-    'api_auth',
+    'users',
     'common',
     'catalog',
     'customers',
@@ -55,7 +55,7 @@ SILENCED_SYSTEM_CHECKS = ['security.W019']
 
 ADMIN_REORDER = (
     {'app': 'catalog', 'models': ('catalog.Item',)},
-    {'app': 'api_auth', 'models': ('api_auth.User',)},
+    {'app': 'users', 'models': ('users.User',)},
     {'app': 'store', 'models': ('store.PriceLevel', 'store.Order', 'store.Location', 'store.PostOffice', 'store.InventoryRecord', 'store.ShippingInfo')},
     'admin_interface',
 )
@@ -218,15 +218,15 @@ DJOSER = {
         "token_create": "djoser.serializers.TokenCreateSerializer",
 
         # CUSTOM SERIALIZERS
-        "user_create": "api_auth.serializers.UserCreateSerializer",
-        "user_create_password_retype": "api_auth.serializers.UserCreatePasswordRetypeSerializer",
-        "user": "api_auth.serializers.UserSerializer",
+        "user_create": "users.serializers.UserCreateSerializer",
+        "user_create_password_retype": "users.serializers.UserCreatePasswordRetypeSerializer",
+        "user": "users.serializers.UserSerializer",
 
-        "set_password": "api_auth.serializers.SetPasswordSerializer",
-        "set_password_retype": "api_auth.serializers.SetPasswordRetypeSerializer",
+        "set_password": "users.serializers.SetPasswordSerializer",
+        "set_password_retype": "users.serializers.SetPasswordRetypeSerializer",
 
-        "password_reset_confirm": "api_auth.serializers.PasswordResetConfirmSerializer",
-        "password_reset_confirm_retype": "api_auth.serializers.PasswordResetConfirmRetypeSerializer",
+        "password_reset_confirm": "users.serializers.PasswordResetConfirmSerializer",
+        "password_reset_confirm_retype": "users.serializers.PasswordResetConfirmRetypeSerializer",
     },
     'PERMISSIONS': {
         "set_username": ['common.permissions.AlwaysDeny',],
@@ -248,7 +248,7 @@ MEDIA_ROOT = Path(BASE_DIR).joinpath('media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'api_auth.User'
+AUTH_USER_MODEL = 'users.User'
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 1025
 
@@ -271,5 +271,5 @@ import django
 django.setup()
 
 from djoser import views as djoser_views
-from api_auth import views as custom_views
+from users import views as custom_views
 djoser_views.UserViewSet = custom_views.UserViewSet

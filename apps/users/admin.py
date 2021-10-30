@@ -19,12 +19,8 @@ class PhoneInline(NoChangeDeleteMixin, admin.TabularInline):
 class UserAdmin(DjangoUserAdmin):
 	inlines = [PhoneInline]
 	if apps.is_installed('customers'):
-		from customers.admin import CustomerInline, CardInline, ShippingAddressInline
-		inlines += [CustomerInline, CardInline, ShippingAddressInline,]
-
-	if apps.is_installed('store'):
-		from store.admin import CustomPriceInline
-		inlines += [CustomPriceInline]
+		from customers.admin import CustomerInline, CardInline
+		inlines += [CustomerInline, CardInline]
 
 	fieldsets = (
 		(_('Personal info'), {'fields': ('first_name', 'last_name', 'email', 'is_active', 'is_staff')}),
@@ -35,6 +31,19 @@ class UserAdmin(DjangoUserAdmin):
 	list_filter = ('is_staff',)
 	search_fields = ('email', 'first_name', 'last_name')
 	ordering = ('email',)
+
+	def get_inlines(self, request, obj=None):
+		inlines = list(set(self.inlines))
+		if apps.is_installed('events'):
+			from events.admin import HostInline, AttendeeInline
+			from events.models import Host
+
+			inlines.insert(0, AttendeeInline)
+
+			if Host.objects.filter(user=obj):
+				inlines.insert(0, HostInline)
+
+		return inlines
 
 
 admin.site.unregister(Group)

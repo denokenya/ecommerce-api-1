@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from api_auth.serializers import PhoneSerializer
-from api_auth.models import User
+from users.serializers import PhoneSerializer
+from users.models import User
 from customers.models import Card, Customer
 from customers.serializers import CardSerializer, ShippingAddressSerializer
 

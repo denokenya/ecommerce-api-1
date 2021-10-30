@@ -11,7 +11,7 @@ from address.models import AbstractAddress
 class Customer(models.Model):
 	PURCHASE_WAIT_TIME = 5
 
-	user = models.OneToOneField('api_auth.User', related_name='customer', on_delete=models.CASCADE)
+	user = models.OneToOneField('users.User', related_name='customer', on_delete=models.CASCADE)
 	if apps.is_installed('store'):
 		price_level = models.ForeignKey('store.PriceLevel', on_delete=models.SET_NULL, blank=True, null=True)
 		payment_methods = models.ManyToManyField('store.PaymentMethod', blank=True)
@@ -39,7 +39,7 @@ class CustomerAddress(AbstractAddress):
 
 
 class Card(CustomerAddress):
-	user = models.ForeignKey('api_auth.User', related_name='card', on_delete=models.CASCADE)
+	user = models.ForeignKey('users.User', related_name='card', on_delete=models.CASCADE)
 	src_id = models.CharField("Credit Card Stripe ID", max_length=30)
 
 	class Meta(CustomerAddress.Meta):
@@ -47,14 +47,14 @@ class Card(CustomerAddress):
 
 
 class ShippingAddress(CustomerAddress):
-	user = models.ForeignKey('api_auth.User', related_name='shipping_address', on_delete=models.CASCADE)
+	user = models.ForeignKey('users.User', related_name='shipping_address', on_delete=models.CASCADE)
 
 	class Meta(CustomerAddress.Meta):
 		verbose_name = "Shipping Address"
 
 
 # Signals
-@receiver(post_save, sender='api_auth.User', dispatch_uid="user_created")
+@receiver(post_save, sender='users.User', dispatch_uid="user_created")
 def user_created(sender, instance, created, *args, **kwargs):
 	customer = Customer.objects.get_or_create(user=instance)[0]
 

@@ -55,11 +55,12 @@ form.addEventListener("submit", function(e) {
   function stripeSourceHandler(source) {
     url = document.getElementById("url").textContent;
     csrfToken = document.getElementsByName("csrfmiddlewaretoken")[0].value;
+
     fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjM0ODQwMzQ5LCJqdGkiOiJhYzFkMmI3MjVmZDY0ODljYjcwN2RiMDBiYWU4OTk4YiIsInVzZXJfaWQiOjF9.EBmztkqSGFxCZW3up23FOhtbL7CtOpW12RHr-FPNXX8',
+        'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjM1NzA5MjcyLCJqdGkiOiJmMDU1YzIzOWJiYzY0NmY0YjBjNzRmYmJiODI2MDVkOSIsInVzZXJfaWQiOjF9.OYl-iSCwgPnISmGs38F828CnE5fStpz1Tbl-gK72n10',
         'X-CSRFTOKEN': csrfToken
       },
       body: JSON.stringify({

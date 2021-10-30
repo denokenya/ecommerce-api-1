@@ -208,7 +208,7 @@ class Price(models.Model):
 
 
 class CustomPrice(models.Model):
-	user = models.ForeignKey('api_auth.User', on_delete=models.CASCADE)
+	user = models.ForeignKey('users.User', on_delete=models.CASCADE)
 	item = models.ForeignKey(Item, on_delete=models.CASCADE)
 
 	price = models.FloatField(default=0)
@@ -257,7 +257,7 @@ class OrderManager(Manager):
 
 
 class Order(models.Model):
-	user = models.ForeignKey('api_auth.User', related_name='orders', on_delete=models.CASCADE)
+	user = models.ForeignKey('users.User', related_name='orders', on_delete=models.CASCADE)
 	payment_method = models.ForeignKey(PaymentMethod, verbose_name='Payment Method', on_delete=models.SET_NULL, blank=True, null=True)
 	card = models.ForeignKey('customers.Card', on_delete=models.CASCADE, blank=True, null=True)
 

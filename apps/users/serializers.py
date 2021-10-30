@@ -60,9 +60,7 @@ class PasswordValidatorMixin(serializers.Serializer):
 		return super().validate(validated_data)
 
 
-class PasswordSerializer(PasswordValidatorMixin, serializers.Serializer):
-	new_password = serializers.CharField(write_only=True, style={"input_type": "password"})
-
+class PasswordSerializer(PasswordValidatorMixin, djoser_sz.PasswordSerializer):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		request = self.context.get('request')

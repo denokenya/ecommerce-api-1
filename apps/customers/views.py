@@ -25,6 +25,7 @@ class StripeView(TemplateView):
 class CardView(ModelViewSet):
 	queryset = Card.objects.all()
 	serializer_class = CardSerializer
+	http_method_names = ['get', 'post', 'patch', 'delete']
 
 	def get_queryset(self):
 		return self.queryset.filter(user=self.request.user)
@@ -42,6 +43,7 @@ class CardView(ModelViewSet):
 class ShippingAddressView(ModelViewSet):
 	queryset = ShippingAddress.objects.all()
 	serializer_class = ShippingAddressSerializer
+	http_method_names = ['get', 'post', 'patch', 'delete']
 
 	def get_queryset(self):
 		return self.queryset.filter(user=self.request.user)
