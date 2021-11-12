@@ -1,13 +1,20 @@
+# LAV
+
 from django.urls import include, path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt import views as jwt_views
 
 from . import views
 
 
-urlpatterns = [
-	path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-	path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+router = DefaultRouter()
+router.register('', views.UserViewSet)
 
-	path('phone/add/', views.AddPhonenumberView.as_view()),
-	path('phone/verify/', views.VerifyPhonenumberView.as_view()),
+urlpatterns = [
+    path('', include('djoser.urls.jwt')),
+    path('users/', include(router.urls)),
+
+	path('jwt/create/', jwt_views.TokenObtainPairView.as_view()),
+	path('jwt/refresh/', jwt_views.TokenRefreshView.as_view()),
+	path('jwt/verify/', jwt_views.TokenVerifyView.as_view()),
 ]

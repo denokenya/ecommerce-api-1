@@ -1,10 +1,15 @@
+# LAV
+
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-from phonenumber_field.modelfields import PhoneNumberField
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
 
 from common.fields import LowercaseEmailField
 
 
+# Managers
 class UserManager(BaseUserManager):
 	use_in_migrations = True
 
@@ -35,6 +40,7 @@ class UserManager(BaseUserManager):
 		return self._create_user(email, password, **extra_fields)
 
 
+# Models
 class User(AbstractUser):
 	first_name = models.CharField(max_length=30)
 	last_name = models.CharField(max_length=30)
@@ -49,20 +55,19 @@ class User(AbstractUser):
 	def __str__(self):
 		return f"{self.first_name} {self.last_name}"
 
-	def set_username(self):
-		username = self.email.split('@')[0]
-		number = User.objects.filter(username__iexact=username).count()
-		self.username = f"{username}{number}"
 
-	def save(self, *args, **kwargs):
-		if not self.pk:
-			self.set_username()
-		super().save(*args, **kwargs)
+class Profile(models.Model):
+	user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+	dob = models.DateField()
+	image = models.ImageField(upload_to='users/profile/image', blank=True, null=True)
+
+	def can_drink(self):
+		return (timezone.now()-self.dob)/365 >= 21
 
 
-class Phone(models.Model):
-	user = models.OneToOneField(User, on_delete=models.CASCADE, blank=True, null=True)
-
-	phonenumber = PhoneNumberField("Phone Number", null=True, blank=True, unique=True)
-	service_sid = models.CharField("Twilio Service SID", max_length=50, null=True, blank=True)
-	verified = models.BooleanField(default=False)
+# Signals
+@receiver(post_save, sender='users.User', dispatch_uid="user_created")
+def user_created(sender, instance, created, *args, **kwargs):
+	if instance.is_superuser:
+		Profile.objects.get_or_create(user=instance, dob=timezone.now())
