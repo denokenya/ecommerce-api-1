@@ -265,11 +265,3 @@ STRIPE_SECRET_KEY = os.environ['STRIPE_SECRET_KEY']
 # STRIPE_ENDPOINT_SECRET = os.environ['STRIPE_ENDPOINT_SECRET']
 
 stripe.api_key = STRIPE_SECRET_KEY
-
-# Used for overriding djoser
-import django
-django.setup()
-
-from djoser import views as djoser_views
-from users import views as custom_views
-djoser_views.UserViewSet = custom_views.UserViewSet
