@@ -26,6 +26,8 @@ class ValidatorSerializerMixin(serializers.Serializer):
 		email_name = email.split("@")[0]
 		password = self.get_password(validated_data)
 
+		print(password)
+		print('here')
 		if len(password) < 8:
 			error_list.append("Password is not at least 8 characters.")
 		if not re.search("[a-zA-Z]", password):
@@ -83,7 +85,7 @@ class UserCreateSerializer(ValidatorSerializerMixin, djoser_sz.UserCreateSeriali
 
 	def validate(self, validated_data):
 		self.profile = validated_data.pop('profile')
-		return validated_data
+		return super().validate(validated_data)
 
 	def save(self, **kwargs):
 		user = super().save(**kwargs)
