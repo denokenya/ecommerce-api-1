@@ -111,9 +111,11 @@ class CurrentUserSerializer(djoser_sz.UserSerializer):
 		self.profile.pop('dob', {})
 		return validated_data
 
-	def update(self, instance, validated_data):
-		Profile.objects.filter(pk=instance.profile.pk).update(**self.profile)
-		return super().update(instance, validated_data)
+	def save(self, **kwargs):
+		profile = Profile.objects.get(user=self.instance)
+		profile.__dict__.update(**self.profile)
+		profile.save()
+		return super().save(**kwargs)
 
 
 # Change Password
