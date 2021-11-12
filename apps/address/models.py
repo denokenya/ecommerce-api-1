@@ -14,8 +14,5 @@ class AbstractAddress(models.Model):
 		abstract = True
 
 	def __str__(self):
-		line2 = ""
-		if self.line2:
-			line2 = f" {self.line2},"
-
-		return f"{self.line1},{line2} {self.city}, {self.state}, {self.zipcode}, {self.country}"
+		line2 = " " + self.line2 if self.line2 else ""
+		return f"{self.line1}{line2}, {self.city}, {self.state}, {self.zipcode}, {self.country}"
