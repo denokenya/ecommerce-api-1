@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from users.serializers import PhoneSerializer
 from users.models import User
 from customers.models import Card, Customer
 from customers.serializers import CardSerializer, ShippingAddressSerializer
@@ -89,14 +88,13 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 
 class ExtendedUserSerializer(serializers.ModelSerializer):
-	phone = PhoneSerializer(read_only=True)
 	customer = CustomerSerializer(read_only=True)
 	card = CardSerializer(read_only=True, many=True)
 	shipping_address = ShippingAddressSerializer(read_only=True, many=True)
 
 	class Meta:
 		model = User
-		fields = ('id', 'first_name', 'last_name', 'email', 'phone', 'customer', 'card', 'shipping_address')
+		fields = ('id', 'first_name', 'last_name', 'email', 'customer', 'card', 'shipping_address')
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
