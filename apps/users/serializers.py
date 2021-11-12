@@ -68,14 +68,9 @@ class CurrentProfileSerializer(serializers.ModelSerializer):
 			raise serializers.ValidationError("You must be 19 years or older to use this product.")
 		return value
 
-	def save(self, user, **kwargs):
-		if self.instance is None:
-			self.validated_data['user'] = user
-		return super().save(**kwargs)
-
 
 class UserCreateSerializer(ValidatorSerializerMixin, djoser_sz.UserCreateSerializer):
-	profile = CurrentProfileSerializer(read_only=True)
+	profile = CurrentProfileSerializer()
 
 	class Meta(djoser_sz.UserCreateSerializer.Meta):
 		fields = ('id', 'first_name', 'last_name', 'email', 'username', 'password', 'profile',)
@@ -85,6 +80,15 @@ class UserCreateSerializer(ValidatorSerializerMixin, djoser_sz.UserCreateSeriali
 		if User.objects.filter(email__iexact=value.lower()).exists():
 			raise serializers.ValidationError("A user with this email already exists.")
 		return value
+
+	def validate(self, validated_data):
+		self.profile = validated_data.pop('profile')
+		return validated_data
+
+	def save(self, **kwargs):
+		user = super().save(**kwargs)
+		Profile.objects.create(user=user, **self.profile)
+		return user
 
 	def to_representation(self, instance):
 		return super().to_representation(instance) if not self.context['request'].data.get('validate') else {}
@@ -96,18 +100,19 @@ class UserCreatePasswordRetypeSerializer(UserCreateSerializer, djoser_sz.UserCre
 
 # Get/Patch Current User
 class CurrentUserSerializer(djoser_sz.UserSerializer):
-	profile = CurrentProfileSerializer(read_only=True)
-	image = serializers.ImageField(required=False, write_only=True)
+	profile = CurrentProfileSerializer()
 
 	class Meta(djoser_sz.UserSerializer.Meta):
 		model = User
-		fields = ('id', 'first_name', 'last_name', 'email', 'username', 'profile', 'image')
+		fields = ('id', 'first_name', 'last_name', 'email', 'username', 'profile')
+
+	def validate(self, validated_data):
+		self.profile = validated_data.pop('profile', {})
+		self.profile.pop('dob', {})
+		return validated_data
 
 	def update(self, instance, validated_data):
-		image = validated_data.pop('image', None)
-		if image:
-			instance.profile.image = image
-			instance.profile.save()
+		Profile.objects.filter(pk=instance.profile.pk).update(**self.profile)
 		return super().update(instance, validated_data)
 
 

@@ -5,32 +5,15 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from djoser import signals
 from djoser.compat import get_user_email
 from djoser.conf import settings
 from djoser.views import UserViewSet as DJoserUserViewSet
 
-from .serializers import CurrentProfileSerializer
-
 
 class UserViewSet(DJoserUserViewSet):
 	def perform_create(self, user_serializer):
-		profile_serializer = CurrentProfileSerializer(data=self.request.data)
-		profile_serializer.is_valid(raise_exception=True)
-
 		if not self.request.data.get('validate'):
-			user = user_serializer.save()
-			profile_serializer.save(user=user)
-			signals.user_registered.send(
-				sender=self.__class__, user=user, request=self.request
-			)
-
-			context = {"user": user}
-			to = [get_user_email(user)]
-			if settings.SEND_ACTIVATION_EMAIL:
-				settings.EMAIL.activation(self.request, context).send(to)
-			elif settings.SEND_CONFIRMATION_EMAIL:
-				settings.EMAIL.confirmation(self.request, context).send(to)
+			super().perform_create(user_serializer)
 
 	@action(["post"], detail=False)
 	def set_password(self, request, *args, **kwargs):
