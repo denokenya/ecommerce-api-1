@@ -220,7 +220,8 @@ DJOSER = {
         # CUSTOM SERIALIZERS
         "user_create": "users.serializers.UserCreateSerializer",
         "user_create_password_retype": "users.serializers.UserCreatePasswordRetypeSerializer",
-        "user": "users.serializers.UserSerializer",
+        "user": "users.serializers.PublicUserSerializer",
+        "current_user": "users.serializers.CurrentUserSerializer",
 
         "set_password": "users.serializers.SetPasswordSerializer",
         "set_password_retype": "users.serializers.SetPasswordRetypeSerializer",
@@ -229,12 +230,12 @@ DJOSER = {
         "password_reset_confirm_retype": "users.serializers.PasswordResetConfirmRetypeSerializer",
     },
     'PERMISSIONS': {
-        "set_username": ['common.permissions.AlwaysDeny',],
-        "set_username_retype": ['common.permissions.AlwaysDeny',],
-        "username_reset": ['common.permissions.AlwaysDeny',],
-        "username_reset_confirm": ['common.permissions.AlwaysDeny',],
+        "set_username": ['common.permissions.AlwaysDeny'],
+        "set_username_retype": ['common.permissions.AlwaysDeny'],
+        "username_reset": ['common.permissions.AlwaysDeny'],
+        "username_reset_confirm": ['common.permissions.AlwaysDeny'],
     },
-    'SOCIAL_AUTH_ALLOWED_REDIRECT_URIS': ['http://localhost:8000/accounts/profile',]
+    'HIDE_USERS': False
 }
 
 
