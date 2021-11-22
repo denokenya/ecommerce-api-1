@@ -1,5 +1,3 @@
-# LAV
-
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.db.models.signals import post_save
@@ -63,11 +61,12 @@ class Profile(models.Model):
 	image = models.ImageField(upload_to='users/profile/image', blank=True, null=True)
 
 	def can_drink(self):
-		return (timezone.now()-self.dob)/365 >= 21
+		age = (timezone.now()-self.dob).days / 365
+		return age >= 21
 
 
 # Signals
 @receiver(post_save, sender='users.User', dispatch_uid="user_created")
 def user_created(sender, instance, created, *args, **kwargs):
-	if instance.is_superuser:
+	if created and instance.is_superuser:
 		Profile.objects.get_or_create(user=instance, dob=timezone.now())

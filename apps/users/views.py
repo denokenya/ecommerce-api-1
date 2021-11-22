@@ -1,5 +1,3 @@
-# LAV
-
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
@@ -11,9 +9,13 @@ from djoser.views import UserViewSet as DJoserUserViewSet
 
 
 class UserViewSet(DJoserUserViewSet):
-	def perform_create(self, user_serializer):
+	def create(self, request, *args, **kwargs):
 		if not self.request.data.get('validate'):
-			super().perform_create(user_serializer)
+			return super().create(request, *args, **kwargs)
+
+		serializer = self.get_serializer(data=self.request.data)
+		serializer.is_valid(raise_exception=True)
+		return Response({}, status=status.HTTP_200_OK)
 
 	@action(["post"], detail=False)
 	def set_password(self, request, *args, **kwargs):

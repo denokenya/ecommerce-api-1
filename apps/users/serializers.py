@@ -1,15 +1,17 @@
-# LAV
-
 import re
 import datetime
 import djoser
 
 from django.contrib.auth.models import User
 from rest_framework import serializers
-
 from djoser import serializers as djoser_sz
+from djoser import utils
 
 from .models import Profile, User
+
+
+# Constants
+AGE_LIMIT = 19
 
 
 # Mixins
@@ -22,12 +24,25 @@ class ValidatorSerializerMixin(serializers.Serializer):
 	def validate(self, validated_data):
 		error_list = []
 
-		email = validated_data.get('email') or self.email
+		# Register
+		email = validated_data.get('email')
+		if not email:
+
+			# Reset
+			uid = validated_data.get('uid')
+			if uid:	
+				uid_decoded = utils.decode_uid(uid)
+				user = User.objects.get(pk=uid_decoded)
+				email = user.email
+				
+			# Change
+			else:
+				request = self.context['request']
+				if request.user.is_authenticated:
+					email = request.user.email
+			
 		email_name = email.split("@")[0]
 		password = self.get_password(validated_data)
-
-		print(password)
-		print('here')
 		if len(password) < 8:
 			error_list.append("Password is not at least 8 characters.")
 		if not re.search("[a-zA-Z]", password):
@@ -47,9 +62,7 @@ class ValidatorSerializerMixin(serializers.Serializer):
 
 
 class PasswordSerializerMixin(ValidatorSerializerMixin, djoser_sz.PasswordSerializer):
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.email = self.context['request'].user.email
+	pass
 
 
 class PasswordRetypeSerializerMixin(PasswordSerializerMixin, djoser_sz.PasswordRetypeSerializer):
@@ -59,20 +72,26 @@ class PasswordRetypeSerializerMixin(PasswordSerializerMixin, djoser_sz.PasswordR
 # Serializers
 
 # Create User w/ Profile
-class CurrentProfileSerializer(serializers.ModelSerializer):
+class CreateGetProfileSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Profile
 		fields = ('image', 'dob')
 
 	def validate_dob(self, value):
 		years = (datetime.datetime.now().date() - value).days / 365
-		if years < 19:
-			raise serializers.ValidationError("You must be 19 years or older to use this product.")
+		if years < AGE_LIMIT:
+			raise serializers.ValidationError(f"You must be {AGE_LIMIT} years or older to use this product.")
 		return value
 
 
+class UpdateProfileSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Profile
+		fields = ('image',)
+
+
 class UserCreateSerializer(ValidatorSerializerMixin, djoser_sz.UserCreateSerializer):
-	profile = CurrentProfileSerializer()
+	profile = CreateGetProfileSerializer()
 
 	class Meta(djoser_sz.UserCreateSerializer.Meta):
 		fields = ('id', 'first_name', 'last_name', 'email', 'username', 'password', 'profile',)
@@ -91,10 +110,7 @@ class UserCreateSerializer(ValidatorSerializerMixin, djoser_sz.UserCreateSeriali
 		user = super().save(**kwargs)
 		Profile.objects.create(user=user, **self.profile)
 		return user
-
-	def to_representation(self, instance):
-		return super().to_representation(instance) if not self.context['request'].data.get('validate') else {}
-
+		
 
 class UserCreatePasswordRetypeSerializer(UserCreateSerializer, djoser_sz.UserCreatePasswordRetypeSerializer):
 	pass
@@ -102,11 +118,16 @@ class UserCreatePasswordRetypeSerializer(UserCreateSerializer, djoser_sz.UserCre
 
 # Get/Patch Current User
 class CurrentUserSerializer(djoser_sz.UserSerializer):
-	profile = CurrentProfileSerializer()
+	profile = CreateGetProfileSerializer()
 
 	class Meta(djoser_sz.UserSerializer.Meta):
 		model = User
 		fields = ('id', 'first_name', 'last_name', 'email', 'username', 'profile')
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		if self.context['request'].method == 'PATCH':
+			self.fields['profile'] = UpdateProfileSerializer()
 
 	def validate(self, validated_data):
 		self.profile = validated_data.pop('profile', {})
