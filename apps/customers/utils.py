@@ -1,7 +1,5 @@
 import stripe
 
-from .models import Customer
-
 
 def stripe_get_customer(user):
 	customer = user.customer
